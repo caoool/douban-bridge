@@ -10,7 +10,7 @@ import { applyAgentVerdict } from "../src/libs/agent-match/writer";
 import { api } from "../src/libs/api";
 import { enqueueSelectedAgentJobs, tidyUpListFilter } from "../src/routes/dash/tidy-up";
 import { tidyUpDetailRoute } from "../src/routes/dash/tidy-up/detail";
-import { withTestContext } from "./context";
+import { withAgentMatchTestContext as withTestContext } from "./context";
 
 async function postTidyUp(doubanId: number, body: Record<string, string>) {
   const form = new URLSearchParams(body);

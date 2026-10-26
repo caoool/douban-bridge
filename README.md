@@ -1,5 +1,9 @@
 # Douban Bridge
 
+> **caoool 的自托管 fork**：完整 Stremio 服务部署于 [配置页面](https://douban-stremio-plugin.caoool.workers.dev/configure)，[安装地址](https://douban-stremio-plugin.caoool.workers.dev/manifest.json)。部署与凭据步骤见 [自托管说明](docs/deployment/self-hosted.md)。本 fork 修复 metadata 非法链接、电影直接选源和剧集季集列表；AI 增强默认关闭。第三方 API 凭据与实机点播需单独完成验证。
+>
+> 下方保留上游项目说明及作者链接；其中上游托管服务和 npm 包不代表本 fork 的部署。
+
 把豆瓣榜单、推荐与搜索带进 Rex 的 Widget，背后是校准过的豆瓣 → TMDB / IMDb / Trakt ID 映射库。
 
 [![npm](https://img.shields.io/npm/v/@rexnow/douban)](https://www.npmjs.com/package/@rexnow/douban)

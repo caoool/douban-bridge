@@ -1,4 +1,5 @@
 import { getContext } from "@/libs/middleware";
+import { isTokensReportEnabled } from "./settings";
 
 // shortcut: day buckets follow ~/.config/tokens timezone Asia/Singapore, change with that setting
 const TOKENS_DAY_TIME_ZONE = "Asia/Singapore";
@@ -235,7 +236,8 @@ export async function reportPiUsage(
   if (entries.length === 0) return;
   const now = options?.now ?? new Date();
   try {
-    const db = getContext().env.STREMIO_ADDON_DOUBAN;
+    const env = getContext().env;
+    const db = env.STREMIO_ADDON_DOUBAN;
     const day = tokensDay(now);
     await db.batch(
       entries.map((entry) =>
@@ -253,7 +255,8 @@ export async function reportPiUsage(
           ),
       ),
     );
-    const token = (options?.token ?? getContext().env.TOKENS_API_TOKEN)?.trim();
+    if (!isTokensReportEnabled(env)) return;
+    const token = (options?.token ?? env.TOKENS_API_TOKEN)?.trim();
     if (!token) return;
     const stored = await db
       .prepare(

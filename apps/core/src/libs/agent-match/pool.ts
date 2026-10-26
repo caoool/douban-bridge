@@ -4,6 +4,7 @@ import { api } from "@/libs/api";
 import { getContext } from "@/libs/middleware";
 import { isBusy, isEvaluated, parseAgent, serializeAgent } from "./blob";
 import { AGENT_LEASE_MS } from "./constants";
+import { isAgentMatchEnabled } from "./settings";
 import type { AgentMatchJob } from "./types";
 
 export type { AgentMatchJob };
@@ -78,6 +79,7 @@ export async function claimAgentJobs(
   doubanIds?: readonly number[],
   includeSuggested = doubanIds != null,
 ): Promise<AgentMatchJob[]> {
+  if (!isAgentMatchEnabled(getContext().env)) return [];
   if (limit != null && limit <= 0) return [];
   const selected = doubanIds
     ? parseEnqueueIds(doubanIds.map(String)).slice(0, limit ?? Number.POSITIVE_INFINITY)
@@ -151,7 +153,7 @@ export async function enqueueUnmatchedAgentJobs(doubanIds: readonly number[]): P
   const ids = parseEnqueueIds(doubanIds.map(String));
   if (ids.length === 0) return 0;
   const { env, ctx } = getContext();
-  if (!env.AGENT_MATCH_QUEUE) return 0;
+  if (!isAgentMatchEnabled(env) || !env.AGENT_MATCH_QUEUE) return 0;
   const jobs = await claimAgentJobs(ids.length, Date.now(), ids, false);
   await Promise.all(
     jobs.map((job) => {

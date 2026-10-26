@@ -10,6 +10,7 @@ import {
 } from "@douban-bridge/contracts/collections";
 import { version } from "../package.json";
 import { loadCatalog, loadRecommend, loadSearch as searchFromCloud } from "./cloud";
+import { CORE_ORIGIN } from "./deployment";
 import { SUB_COLLECTIONS } from "./sub-collections";
 
 function pageSkip(page?: string | number) {
@@ -219,14 +220,14 @@ function yearlyModule(id: string, title: string, rankingId: keyof typeof YEARLY_
 }
 
 WidgetMetadata = {
-  id: "douban.bridge",
+  id: "caoool.douban.bridge",
   title: "豆瓣榜单",
   description: "豆瓣电影、剧集排行榜",
   author: "Baran",
-  site: "https://douban-bridge.baran.wang/rex",
+  site: `${CORE_ORIGIN}/rex`,
   version,
   requiredVersion: "0.0.1",
-  iconurl: "https://fastly.jsdelivr.net/gh/baranwang/douban-bridge@main/icon.png",
+  iconurl: `${CORE_ORIGIN}/icon.png`,
   globalParams: [
     { name: "sk", title: "密钥", description: "点击上方网站获取密钥，开启完整功能", type: "input" },
     {

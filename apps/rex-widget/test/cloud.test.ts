@@ -64,8 +64,8 @@ test("metadata translates broad labels to English", () => {
   assert.equal(metadata.search?.title, "搜索");
   assert.equal(typeof Reflect.get(globalThis, "loadSearch"), "function");
   assert.notEqual(metadata.description, "todo");
-  assert.equal(WidgetMetadata.id, "douban.bridge");
-  assert.equal(WidgetMetadata.iconurl, "https://fastly.jsdelivr.net/gh/baranwang/douban-bridge@main/icon.png");
+  assert.equal(WidgetMetadata.id, "caoool.douban.bridge");
+  assert.equal(WidgetMetadata.iconurl, "https://douban-bridge-core.caoool.workers.dev/icon.png");
   assert.deepEqual(
     Object.keys(metadata.i18n?.en ?? {}).sort(),
     [
@@ -157,7 +157,7 @@ function install(
   const widget = hostFixture();
   widget.http.get = async (url, options) => {
     const host = new URL(url).hostname;
-    if (host === "douban-bridge.baran.wang") {
+    if (host === "douban-bridge-core.caoool.workers.dev") {
       counts.cloud += 1;
       return handler(url, options).then((response) => ({ ...response, headers: {} }));
     }
@@ -174,7 +174,7 @@ test("valid empty cloud page never calls local sources", async () => {
   let calls = 0;
   runtimeWidget.http.get = async (url) => {
     calls += 1;
-    assert.equal(new URL(url).hostname, "douban-bridge.baran.wang");
+    assert.equal(new URL(url).hostname, "douban-bridge-core.caoool.workers.dev");
     return { statusCode: 200, data: { items: [] }, headers: {} };
   };
   assert.deepEqual(await loadCatalog({ collectionId: "movie_top250", skip: 0 }, "sk_test"), []);
@@ -193,7 +193,7 @@ test("cloud catalog works without a global URL constructor", async () => {
   Reflect.set(globalThis, "URL", undefined);
   try {
     const result = await loadCatalog({ collectionId: "movie_top250", skip: 20 }, SK);
-    assert.equal(requested, "https://douban-bridge.baran.wang/v1/catalog/movie_top250?skip=20");
+    assert.equal(requested, "https://douban-bridge-core.caoool.workers.dev/v1/catalog/movie_top250?skip=20");
     assert.equal(authorization, `Bearer ${SK}`);
     assert.equal(result[0].title, "云端标题");
   } finally {
@@ -287,7 +287,7 @@ test("cloud and basic catalog failure rejects to the host", async () => {
   const counts = { cloud: 0, basic: 0 };
   const widget = hostFixture();
   widget.http.get = async (url) => {
-    if (new URL(url).hostname === "douban-bridge.baran.wang") {
+    if (new URL(url).hostname === "douban-bridge-core.caoool.workers.dev") {
       counts.cloud += 1;
       return { statusCode: 500, data: null };
     }
@@ -624,7 +624,7 @@ test("cloud search matches Douban ids through POST /v1/items", async () => {
   };
   const result = await loadSearch("肖申克", SK, "user-1");
   assert.equal(posts.length, 1);
-  assert.equal(posts[0].url, "https://douban-bridge.baran.wang/v1/items");
+  assert.equal(posts[0].url, "https://douban-bridge-core.caoool.workers.dev/v1/items");
   assert.deepEqual(posts[0].body, { ids: [1291546] });
   assert.equal(posts[0].headers?.Authorization, `Bearer ${SK}`);
   assert.equal(posts[0].headers?.["X-User-Id"], "user-1");
@@ -736,7 +736,7 @@ test("tv recommend joins tags except sort and posts matched ids", async () => {
   assert.equal(url.searchParams.get("tags"), "喜剧,香港,2020年代");
   assert.equal(url.searchParams.get("sort"), "U");
   assert.equal(url.searchParams.get("start"), "20");
-  assert.equal(posts[0].url, "https://douban-bridge.baran.wang/v1/items");
+  assert.equal(posts[0].url, "https://douban-bridge-core.caoool.workers.dev/v1/items");
   assert.deepEqual(posts[0].body, { ids: [37822829] });
   assert.equal(posts[0].headers?.Authorization, `Bearer ${SK}`);
   assert.equal(posts[0].headers?.["X-User-Id"], "user-1");

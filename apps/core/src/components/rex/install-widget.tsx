@@ -15,21 +15,19 @@ import { SettingSection } from "@/components/setting-section";
 import { track } from "@/libs/track";
 import { useSchemeLaunch } from "@/libs/use-scheme-launch";
 
-const WIDGET_URL = "https://unpkg.com/@rexnow/douban";
-const WIDGET_SCHEME = `rex://widget/?url=${WIDGET_URL}`;
-
-export const InstallWidget: React.FC = () => {
+export const InstallWidget: React.FC<{ widgetUrl: string }> = ({ widgetUrl }) => {
   const launch = useSchemeLaunch("未检测到 Rex，请复制链接后在 Rex 中手动添加");
+  const widgetScheme = `rex://widget/?url=${encodeURIComponent(widgetUrl)}`;
 
   const copy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(WIDGET_URL);
+      await navigator.clipboard.writeText(widgetUrl);
       toast.add({ title: "链接已复制到剪贴板", type: "success" });
       track("复制 Widget");
     } catch {
       toast.add({ title: "复制失败", type: "error" });
     }
-  }, []);
+  }, [widgetUrl]);
 
   return (
     <SettingSection title="安装 Widget">
@@ -40,13 +38,13 @@ export const InstallWidget: React.FC = () => {
           </ItemMedia>
           <ItemContent>
             <ItemTitle>豆瓣榜单</ItemTitle>
-            <ItemDescription>@rexnow/douban</ItemDescription>
+            <ItemDescription>Douban · caoool</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button variant="outline" size="icon" aria-label="复制链接" onClick={copy}>
               <Copy />
             </Button>
-            <Button render={<a href={WIDGET_SCHEME} />} onClick={() => launch("打开 Rex")}>
+            <Button render={<a href={widgetScheme} />} onClick={() => launch("打开 Rex")}>
               {/* rex-mark 是纯黑图形，这里永远压在 primary 底色上，所以无条件反色 */}
               <img src="/rex-mark.png" alt="" className="size-4 invert" />在 Rex 中安装
             </Button>

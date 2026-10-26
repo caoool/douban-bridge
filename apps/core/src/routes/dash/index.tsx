@@ -18,7 +18,7 @@ dashRoute.use(
         c.env.KV.get("DASH_PASS", "text"),
       ]);
       if (!dashUser || !dashPass) {
-        return true;
+        return false;
       }
       if (dashUser !== username || dashPass !== password) {
         return false;

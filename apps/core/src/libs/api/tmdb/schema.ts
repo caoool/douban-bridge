@@ -60,3 +60,26 @@ export const tmdbSubjectImagesSchema = z.object({
   posters: tmdbImageDataListSchema,
   logos: tmdbImageDataListSchema,
 });
+
+export const tmdbSeriesSeasonsSchema = z.object({
+  seasons: z
+    .array(z.object({ season_number: z.number().int().nonnegative() }).nullable().catch(null))
+    .catch([])
+    .transform((items) => items.filter((item) => item !== null)),
+});
+
+const tmdbEpisodeSchema = z.object({
+  season_number: z.number().int().nonnegative(),
+  episode_number: z.number().int().nonnegative(),
+  name: z.string().nullish(),
+  overview: z.string().nullish(),
+  air_date: z.string().nullish(),
+  still_path: z.string().nullish(),
+});
+export const tmdbSeasonEpisodesSchema = z.object({
+  episodes: z
+    .array(tmdbEpisodeSchema.nullable().catch(null))
+    .catch([])
+    .transform((items) => items.filter((item) => item !== null)),
+});
+export type TmdbEpisode = z.output<typeof tmdbEpisodeSchema>;

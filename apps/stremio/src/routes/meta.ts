@@ -2,6 +2,7 @@ import type { StremioDetailItem } from "@douban-bridge/contracts/stremio";
 import { Hono } from "hono";
 import type { StremioEnv } from "../env";
 import { coreGet } from "../libs/core-client";
+import { httpUrl, movieVideoId, validLinks } from "../libs/metadata";
 import { matchResponseCache, putResponseCache } from "../libs/response-cache";
 import { matchResourceRoute } from "../libs/router";
 
@@ -20,6 +21,8 @@ type MetaResponse = {
   background?: string;
   logo?: string;
   genres: string[];
+  releaseInfo?: string;
+  videos?: StremioDetailItem["videos"];
   links: StremioDetailItem["links"];
   language?: string;
   country?: string;
@@ -57,24 +60,24 @@ metaRoute.get("*", async (c) => {
     type: item.mediaType === "tv" ? "series" : "movie",
     name: item.title,
     description: item.description,
-    poster: item.images.poster ?? undefined,
-    background: item.images.background ?? undefined,
-    logo: item.images.logo ?? undefined,
+    poster: httpUrl(item.images.poster),
+    background: httpUrl(item.images.background),
+    logo: httpUrl(item.images.logo),
     genres: item.genres,
-    links: item.links,
+    releaseInfo: item.year,
+    links: validLinks(item.links),
+    videos: item.mediaType === "tv" ? (item.videos ?? []) : undefined,
     language: item.language,
     country: item.country,
     awards: item.awards,
-    behaviorHints: {},
+    behaviorHints: { defaultVideoId: movieVideoId(item) },
   };
   if (item.tmdbId) {
     meta.tmdb_id = `tmdb:${item.tmdbId}`;
     meta.tmdbId = item.tmdbId;
-    meta.behaviorHints.defaultVideoId = `tmdb:${item.tmdbId}`;
   }
   if (item.imdbId) {
     meta.imdb_id = item.imdbId;
-    meta.behaviorHints.defaultVideoId = item.imdbId;
   }
 
   const response = c.json({

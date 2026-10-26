@@ -86,6 +86,7 @@ describe("stremio protocol", () => {
         description: "详情",
         poster: POSTER,
         genres: ["剧情"],
+        releaseInfo: "1994",
         links: [],
         imdb_id: "tt0111161",
         tmdb_id: "tmdb:278",
@@ -108,14 +109,20 @@ describe("stremio protocol", () => {
   test("config-scoped URLs pass config and TV becomes series", async () => {
     const calls: CoreCall[] = [];
     const { execution } = ctx();
-    const tv = { ...movieItem, mediaType: "tv", title: "测试剧集" };
+    const videos = [
+      { id: "tt0111161:1:1", title: "第一集", season: 1, episode: 1 },
+      { id: "tt0111161:2:1", title: "第二季第一集", season: 2, episode: 1 },
+    ];
+    const tv = { ...movieItem, mediaType: "tv", title: "测试剧集", videos };
     const response = await app.fetch(
       new Request(`${ORIGIN}/${CONFIG}/meta/series/douban:1291546.json`),
       env(tv, calls),
       execution,
     );
-    const { meta } = (await response.json()) as { meta: { type: string } };
+    const { meta } = (await response.json()) as { meta: { type: string; videos: unknown; behaviorHints: object } };
     assert.equal(meta.type, "series");
+    assert.deepEqual(meta.videos, videos);
+    assert.deepEqual(meta.behaviorHints, {});
     const url = new URL(calls[0].url);
     assert.equal(url.searchParams.get("config"), CONFIG);
     assert.equal(url.origin, "https://core.internal");
@@ -168,6 +175,7 @@ describe("stremio protocol", () => {
       imdb_id: "tt0111161",
       tmdb_id: "tmdb:278",
       tmdbId: 278,
+      behaviorHints: { defaultVideoId: "tt0111161" },
     };
     assert.deepEqual(await publicRes.json(), {
       metas: [expectedMeta],
@@ -188,6 +196,51 @@ describe("stremio protocol", () => {
     assert.equal(catalogUrl.searchParams.get("skip"), "20");
     assert.equal(catalogUrl.searchParams.get("genre"), "剧情");
     assert.equal(catalogUrl.searchParams.get("origin"), ORIGIN);
+  });
+
+  test("relative links and invalid artwork cannot invalidate the whole meta or catalog", async () => {
+    const item = {
+      ...movieItem,
+      images: { poster: "#", background: "/relative.jpg", logo: "javascript:alert(1)" },
+      links: [
+        { name: "导演", category: "director", url: "#" },
+        { name: "演员", category: "actor", url: "" },
+        { name: "豆瓣", category: "douban", url: "https://movie.douban.com/subject/1291546/" },
+      ],
+    };
+    for (const path of ["/meta/movie/douban:1291546.json", "/catalog/movie/movie_top250.json"]) {
+      const response = await app.fetch(new Request(`${ORIGIN}${path}`), env(item), ctx().execution);
+      const body = (await response.json()) as { meta?: Record<string, unknown>; metas?: Record<string, unknown>[] };
+      const meta = body.meta ?? body.metas?.[0];
+      assert.ok(meta);
+      assert.deepEqual(meta.links, [item.links[2]]);
+      for (const field of ["poster", "background", "logo"]) assert.equal(field in meta, false);
+    }
+  });
+
+  test("series catalogs open episode selection and missing episodes never invent a playable video", async () => {
+    const tv = { ...movieItem, mediaType: "tv" };
+    const catalog = await app.fetch(new Request(`${ORIGIN}/catalog/series/tv_hot.json`), env(tv), ctx().execution);
+    const { metas } = (await catalog.json()) as { metas: Record<string, unknown>[] };
+    assert.equal("behaviorHints" in metas[0], false);
+    const response = await app.fetch(
+      new Request(`${ORIGIN}/meta/series/douban:1291546.json`),
+      env(tv),
+      ctx().execution,
+    );
+    const { meta } = (await response.json()) as { meta: { videos: unknown; behaviorHints: object } };
+    assert.deepEqual(meta.videos, []);
+    assert.deepEqual(meta.behaviorHints, {});
+  });
+
+  test("a fork's manifest logo uses its own origin", async () => {
+    const response = await app.fetch(
+      new Request(`https://my-addon.workers.dev/${CONFIG}/manifest.json`),
+      env(),
+      ctx().execution,
+    );
+    const body = (await response.json()) as { logo: string };
+    assert.equal(body.logo, "https://my-addon.workers.dev/icon.png");
   });
 
   test("manifest keeps ADDON identity, original logo, and a relative missing-config redirect", async () => {

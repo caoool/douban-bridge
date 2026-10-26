@@ -1,6 +1,7 @@
 import { asyncLocalStorage } from "@/libs/middleware";
 import { AGENT_MATCH_MAX_ATTEMPTS } from "./constants";
 import { type AgentMatchJob, runAgentMatchJob } from "./runner";
+import { isAgentMatchEnabled } from "./settings";
 import { agentMatchWriter } from "./writer";
 
 export async function handleAgentMatchBatch(
@@ -8,6 +9,12 @@ export async function handleAgentMatchBatch(
   env: CloudflareBindings,
   ctx: ExecutionContext,
 ): Promise<void> {
+  if (!isAgentMatchEnabled(env)) {
+    // Old deliveries must not start AI after opt-out. Their DB leases can be
+    // recovered by cron if the operator explicitly enables matching again.
+    for (const message of batch.messages) message.ack();
+    return;
+  }
   return asyncLocalStorage.run({ env, ctx }, async () => {
     for (const message of batch.messages) {
       try {

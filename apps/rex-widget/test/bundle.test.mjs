@@ -26,6 +26,7 @@ test("Rex bundle has no ESM import, require, core secrets, or Node builtins", ()
   for (const name of SECRETS) assert.equal(code.includes(name), false, name);
   assert.equal(/\bfrom\s+["']node:/.test(code), false);
   assert.equal(/\brequire\s*\(\s*["'](?:node:|fs|path|http|crypto)/.test(code), false);
+  assert.equal(code.includes("douban-bridge.baran.wang"), false);
 });
 
 test("VM globals, Stremio catalog order, optional yearly params, empty cloud page", async () => {
@@ -36,7 +37,7 @@ test("VM globals, Stremio catalog order, optional yearly params, empty cloud pag
     Widget: {
       http: {
         get: async (url, options) => {
-          if (!url.startsWith("https://douban-bridge.baran.wang/")) local += 1;
+          if (!url.startsWith("https://douban-bridge-core.caoool.workers.dev/")) local += 1;
           assert.equal(options.headers.Authorization, "Bearer sk_test");
           assert.equal(options.headers["X-User-Id"], "user-1");
           return { statusCode: 200, data: { items: [] }, headers: {} };
@@ -57,6 +58,9 @@ test("VM globals, Stremio catalog order, optional yearly params, empty cloud pag
   });
   runInContext(code, context);
   assert.ok(context.WidgetMetadata);
+  assert.equal(context.WidgetMetadata.id, "caoool.douban.bridge");
+  assert.equal(context.WidgetMetadata.site, "https://douban-bridge-core.caoool.workers.dev/rex");
+  assert.equal(context.WidgetMetadata.iconurl, "https://douban-bridge-core.caoool.workers.dev/icon.png");
   assert.equal(typeof context.loadDefaultCatalog, "function");
   assert.equal(typeof context.loadGenreCatalog, "function");
   assert.equal(typeof context.loadYearlyCatalog, "function");

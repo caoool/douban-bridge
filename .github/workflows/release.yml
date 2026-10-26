@@ -7,6 +7,7 @@ on:
 
 jobs:
   release:
+    if: github.repository == 'baranwang/douban-bridge'
     runs-on: ubuntu-latest
     permissions:
       id-token: write

@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { getPlatformProxy } from "wrangler";
+import { unstable_readConfig as readConfig } from "wrangler";
 import { assertScheduledSafe } from "./scheduled-safe.mjs";
+import { withSmokeD1 } from "./smoke-local-d1.mjs";
 
 const core = "http://localhost:8787";
 const stremio = "http://localhost:8788";
+const coreConfig = readConfig({ config: resolve("apps/core/wrangler.jsonc") }, { hideWarnings: true });
 
 function timeout() {
   return AbortSignal.timeout(15000);
@@ -31,43 +32,13 @@ function stripSqlComments(sql) {
 }
 
 function prepareMigrationSql(raw) {
-  let sql = raw.replaceAll("--> statement-breakpoint", "");
-  if (stripSqlComments(sql).trim() === "") {
-    const body = sql.match(/\/\*([\s\S]*?)\*\//)?.[1];
-    sql = body ?? "";
-  }
-  if (stripSqlComments(sql).trim() === "") return null;
+  const sql = stripSqlComments(raw);
+  if (sql.trim() === "") return null;
   return sql.replace(/\s+/g, " ").trim();
 }
 
 async function withLocalD1(run) {
-  const dir = mkdtempSync(join(tmpdir(), "bridge-smoke-d1-"));
-  const configPath = join(dir, "wrangler.json");
-  writeFileSync(
-    configPath,
-    JSON.stringify({
-      name: "douban-bridge-smoke-d1",
-      compatibility_date: "2025-11-28",
-      d1_databases: [
-        {
-          binding: "STREMIO_ADDON_DOUBAN",
-          database_name: "stremio-addon-douban",
-          database_id: "543ed1d5-3da8-4ed1-8084-25084af52953",
-          remote: false,
-        },
-      ],
-    }),
-  );
-  const platform = await getPlatformProxy({
-    configPath,
-    persist: { path: resolve(".wrangler/bridge-smoke/v3") },
-    remoteBindings: false,
-  });
-  try {
-    return await run(platform.env.STREMIO_ADDON_DOUBAN);
-  } finally {
-    await platform.dispose();
-  }
+  return withSmokeD1(coreConfig, resolve(".wrangler/bridge-smoke/v3"), run);
 }
 
 async function ensureLocalSchema(db) {
@@ -138,9 +109,9 @@ for (const pathname of new Set(assetPaths)) {
 }
 
 const stremioWrangler = readFileSync(resolve("apps/stremio/wrangler.jsonc"), "utf8");
-const coreWrangler = readFileSync(resolve("apps/core/wrangler.jsonc"), "utf8");
 assert.equal(stremioWrangler.includes('"crons"'), false);
-assert.match(coreWrangler, /"0 \* \* \* \*"/);
+const crons = coreConfig.triggers?.crons ?? [];
+assert.ok(crons.length === 0 || (crons.length === 1 && crons[0] === "0 * * * *"));
 assert.equal(readFileSync(resolve("apps/stremio/src/index.ts"), "utf8").includes("scheduled"), false);
 assert.match(readFileSync(resolve("apps/core/src/index.tsx"), "utf8"), /scheduled/);
 
@@ -184,7 +155,6 @@ const testKeys = await withLocalD1(async (db) => {
   ]) {
     const userId = crypto.randomUUID();
     const sk = `sk_${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`;
-    const hash = Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sk))).toString("hex");
     await db
       .prepare("INSERT INTO users (id, github_id, github_login, has_starred) VALUES (?, ?, ?, 1)")
       .bind(userId, Date.now() + index, `smoke-${userId}`)
@@ -194,8 +164,8 @@ const testKeys = await withLocalD1(async (db) => {
       .bind(userId, JSON.stringify(providers))
       .run();
     await db
-      .prepare("INSERT INTO api_keys (user_id, key_hash, created_at) VALUES (?, ?, ?)")
-      .bind(userId, hash, Date.now())
+      .prepare("INSERT INTO api_keys (user_id, key, created_at) VALUES (?, ?, ?)")
+      .bind(userId, sk, Date.now())
       .run();
     keys.push({ userId, sk });
   }

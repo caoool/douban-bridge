@@ -5,7 +5,7 @@ import { doubanMapping } from "../src/db";
 import { api } from "../src/libs/api";
 import { TmdbAPI } from "../src/libs/api/tmdb";
 import { getCatalogPage } from "../src/services/catalog";
-import { withTestContext } from "./context";
+import { withAgentMatchTestContext, withTestContext } from "./context";
 
 const origin = "https://douban-bridge.baran.wang";
 
@@ -174,7 +174,7 @@ describe("catalog service", { concurrency: false }, () => {
   });
 
   test("existing empty mappings are not rematched or enqueued", async () => {
-    await withTestContext(async (env, ctx) => {
+    await withAgentMatchTestContext(async (env, ctx) => {
       try {
         const pending: Promise<unknown>[] = [];
         const waitUntil = ctx.waitUntil.bind(ctx);
@@ -215,47 +215,50 @@ describe("catalog service", { concurrency: false }, () => {
     });
   });
 
-  test("stremio placeholder rows still match on the first catalog query", async () => {
-    await withTestContext(async (env, ctx) => {
-      try {
-        const pending: Promise<unknown>[] = [];
-        const waitUntil = ctx.waitUntil.bind(ctx);
-        ctx.waitUntil = (promise: Promise<unknown>) => {
-          pending.push(promise);
-          waitUntil(promise);
-        };
-        const sent: Array<{ doubanId: number }> = [];
-        env.AGENT_MATCH_QUEUE = {
-          send: async (body: { doubanId: number }) => {
-            sent.push(body);
-            return { metadata: { metrics: { retries: 0 } } };
-          },
-        } as Queue<{ doubanId: number }>;
-        await api.db.insert(doubanMapping).values({ doubanId: 1 });
-        const requested: number[] = [];
-        mock.method(api.doubanAPI, "getSubjectCollectionItems", async () => ({
-          subject_collection_items: [
-            { id: 1, type: "movie", title: "第一项", cover: undefined, year: "2023", description: undefined },
-          ],
-          total: 1,
-        }));
-        mock.method(api, "findExternalId", async ({ doubanId }: { doubanId: number }) => {
-          requested.push(doubanId);
-          return { doubanId, tmdbId: null, imdbId: null, traktId: null };
-        });
-        const result = await getCatalogPage({ collectionId: "movie_top250", skip: 0 }, { providers: [], origin });
-        await Promise.all(pending);
-        assert.deepEqual(requested, [1]);
-        assert.equal(result[0].tmdbId, null);
-        assert.deepEqual(
-          sent.map((job) => job.doubanId),
-          [1],
-        );
-      } finally {
-        mock.restoreAll();
-      }
+  for (const agentMatchEnabled of [false, true]) {
+    test(`stremio placeholder rows match on the first catalog query with AI ${agentMatchEnabled ? "enabled" : "disabled"}`, async () => {
+      const withContext = agentMatchEnabled ? withAgentMatchTestContext : withTestContext;
+      await withContext(async (env, ctx) => {
+        try {
+          const pending: Promise<unknown>[] = [];
+          const waitUntil = ctx.waitUntil.bind(ctx);
+          ctx.waitUntil = (promise: Promise<unknown>) => {
+            pending.push(promise);
+            waitUntil(promise);
+          };
+          const sent: Array<{ doubanId: number }> = [];
+          env.AGENT_MATCH_QUEUE = {
+            send: async (body: { doubanId: number }) => {
+              sent.push(body);
+              return { metadata: { metrics: { retries: 0 } } };
+            },
+          } as Queue<{ doubanId: number }>;
+          await api.db.insert(doubanMapping).values({ doubanId: 1 });
+          const requested: number[] = [];
+          mock.method(api.doubanAPI, "getSubjectCollectionItems", async () => ({
+            subject_collection_items: [
+              { id: 1, type: "movie", title: "第一项", cover: undefined, year: "2023", description: undefined },
+            ],
+            total: 1,
+          }));
+          mock.method(api, "findExternalId", async ({ doubanId }: { doubanId: number }) => {
+            requested.push(doubanId);
+            return { doubanId, tmdbId: null, imdbId: null, traktId: null };
+          });
+          const result = await getCatalogPage({ collectionId: "movie_top250", skip: 0 }, { providers: [], origin });
+          await Promise.all(pending);
+          assert.deepEqual(requested, [1]);
+          assert.equal(result[0].tmdbId, null);
+          assert.deepEqual(
+            sent.map((job) => job.doubanId),
+            agentMatchEnabled ? [1] : [],
+          );
+        } finally {
+          mock.restoreAll();
+        }
+      });
     });
-  });
+  }
 
   test("calibrated empty mappings are not rematched on this request", async () => {
     await withTestContext(async () => {

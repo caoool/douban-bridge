@@ -7,12 +7,8 @@ function stripSqlComments(sql: string): string {
 }
 
 function prepareMigrationSql(raw: string): string | null {
-  let sql = raw.replaceAll("--> statement-breakpoint", "");
-  if (stripSqlComments(sql).trim() === "") {
-    const body = sql.match(/\/\*([\s\S]*?)\*\//)?.[1];
-    sql = body ?? "";
-  }
-  if (stripSqlComments(sql).trim() === "") return null;
+  const sql = stripSqlComments(raw);
+  if (sql.trim() === "") return null;
   return sql.replace(/\s+/g, " ").trim();
 }
 
@@ -34,6 +30,8 @@ export async function withTestContext<T>(
       const sql = prepareMigrationSql(await readFile(`drizzle/${name}`, "utf8"));
       if (sql) await env.STREMIO_ADDON_DOUBAN.exec(sql);
     }
+    // Dashboard route tests authenticate explicitly, as a deployed instance must.
+    await Promise.all([env.KV.put("DASH_USER", "dash"), env.KV.put("DASH_PASS", "dash")]);
     return await asyncLocalStorage.run({ env, ctx }, () => run(env, ctx));
   } finally {
     try {
@@ -42,4 +40,14 @@ export async function withTestContext<T>(
       await proxy.dispose();
     }
   }
+}
+
+/** Existing AI behavior tests opt in explicitly; other fixtures keep the deployment default. */
+export async function withAgentMatchTestContext<T>(
+  run: (env: CloudflareBindings, ctx: ExecutionContext) => Promise<T>,
+): Promise<T> {
+  return withTestContext(async (env, ctx) => {
+    Object.assign(env, { AGENT_MATCH_ENABLED: true });
+    return run(env, ctx);
+  });
 }

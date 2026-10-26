@@ -1,7 +1,14 @@
-import { resolveTmdbAccessToken, TMDB_IMAGE_LANGUAGE } from "@douban-bridge/contracts/image-providers";
+import { isTmdbReadAccessToken, TMDB_IMAGE_LANGUAGE } from "@douban-bridge/contracts/image-providers";
 import { SECONDS_PER_WEEK } from "@/libs/constants";
 import { BaseAPI, CacheType } from "../base";
-import { tmdbFindResultSchema, tmdbSearchResultSchema, tmdbSubjectImagesSchema } from "./schema";
+import {
+  type TmdbEpisode,
+  tmdbFindResultSchema,
+  tmdbSearchResultSchema,
+  tmdbSeasonEpisodesSchema,
+  tmdbSeriesSeasonsSchema,
+  tmdbSubjectImagesSchema,
+} from "./schema";
 
 type TmdbCreditJob = { job?: string | null; episode_count?: number | null };
 
@@ -40,10 +47,21 @@ export class TmdbAPI extends BaseAPI {
   constructor(apiKey?: string) {
     super({ baseURL: "https://api.themoviedb.org/3" });
     this.axios.interceptors.request.use((config) => {
-      config.headers.set(
-        "Authorization",
-        `Bearer ${resolveTmdbAccessToken(apiKey, this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY)}`,
-      );
+      const userKey = apiKey?.trim();
+      const isV3Key = (value: string | undefined) => !!value && /^[a-f0-9]{32}$/i.test(value);
+      const credential =
+        userKey && (isV3Key(userKey) || isTmdbReadAccessToken(userKey))
+          ? userKey
+          : this.context.env.TMDB_API_KEY?.trim() || process.env.TMDB_API_KEY?.trim();
+      // v3 endpoints accept either api_key or Bearer, never a v3 key as Bearer.
+      config.headers.delete("Authorization");
+      config.params = { ...config.params };
+      delete config.params.api_key;
+      if (isV3Key(credential)) {
+        config.params.api_key = credential;
+      } else if (credential) {
+        config.headers.set("Authorization", `Bearer ${credential}`);
+      }
       return config;
     });
   }
@@ -118,6 +136,37 @@ export class TmdbAPI extends BaseAPI {
         type: CacheType.LOCAL,
       },
     });
+  }
+
+  async getSeriesEpisodes(id: number): Promise<TmdbEpisode[]> {
+    const detail = tmdbSeriesSeasonsSchema.parse(
+      await this.request({
+        url: `/tv/${id}`,
+        timeout: 8000,
+        params: { language: "zh-CN" },
+        cache: { key: `tmdb:tv:${id}:seasons`, ttl: 3600, type: CacheType.LOCAL },
+      }),
+    );
+    const seasons = [...new Set(detail.seasons.map((season) => season.season_number))].sort((a, b) => a - b);
+    const episodes: TmdbEpisode[] = [];
+    // Keep concurrent upstream requests below the Workers connection limit.
+    for (let offset = 0; offset < seasons.length; offset += 4) {
+      const results = await Promise.allSettled(
+        seasons.slice(offset, offset + 4).map(async (season) => {
+          const data = await this.request({
+            url: `/tv/${id}/season/${season}`,
+            timeout: 8000,
+            params: { language: "zh-CN" },
+            cache: { key: `tmdb:tv:${id}:season:${season}:zh-CN`, ttl: 3600, type: CacheType.LOCAL },
+          });
+          return tmdbSeasonEpisodesSchema.parse(data).episodes;
+        }),
+      );
+      for (const result of results) {
+        if (result.status === "fulfilled") episodes.push(...result.value);
+      }
+    }
+    return episodes;
   }
 
   async getSubjectImages(type: "movie" | "tv", id: number, imageLanguages?: string[]) {

@@ -2,6 +2,7 @@ import type { StremioCatalogItem } from "@douban-bridge/contracts/stremio";
 import { Hono } from "hono";
 import type { StremioEnv } from "../env";
 import { coreGet } from "../libs/core-client";
+import { httpUrl, movieVideoId, validLinks } from "../libs/metadata";
 import { matchResponseCache, putResponseCache } from "../libs/response-cache";
 import { getExtraFactory, matchResourceRoute } from "../libs/router";
 
@@ -22,6 +23,7 @@ type CatalogMeta = {
   imdb_id?: string;
   tmdb_id?: string;
   tmdbId?: number;
+  behaviorHints?: { defaultVideoId: string };
 };
 
 export const catalogRoute = new Hono<StremioEnv>();
@@ -47,13 +49,15 @@ catalogRoute.get("*", async (c) => {
       type: item.mediaType === "tv" ? "series" : "movie",
       name: item.title,
       description: item.description,
-      poster: item.images.poster ?? undefined,
-      background: item.images.background ?? undefined,
-      logo: item.images.logo ?? undefined,
+      poster: httpUrl(item.images.poster),
+      background: httpUrl(item.images.background),
+      logo: httpUrl(item.images.logo),
       year: item.year,
       genres: item.genres,
-      links: item.links,
+      links: validLinks(item.links),
     };
+    const videoId = movieVideoId(item);
+    if (videoId) result.behaviorHints = { defaultVideoId: videoId };
     if (item.imdbId) result.imdb_id = item.imdbId;
     if (item.tmdbId) {
       result.tmdb_id = `tmdb:${item.tmdbId}`;

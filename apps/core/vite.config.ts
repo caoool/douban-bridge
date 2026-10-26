@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 import ssrPlugin from "vite-ssr-components/plugin";
 
 export default defineConfig({
+  build: { minify: true },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),

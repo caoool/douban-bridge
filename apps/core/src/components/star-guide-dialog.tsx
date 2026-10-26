@@ -10,7 +10,7 @@ import {
 import { Eye, GitFork, Star } from "lucide-react";
 import { starGuideUi } from "./star-guide-state";
 
-const REPO_URL = "https://github.com/baranwang/douban-bridge";
+const REPO_URL = "https://github.com/caoool/douban-bridge";
 
 const STEPS = ["打开 GitHub 仓库页面", "点击页面右上角的 Star 按钮（如上图）", "回到本页，自动解锁完整模式"];
 
@@ -18,7 +18,7 @@ const STEPS = ["打开 GitHub 仓库页面", "点击页面右上角的 Star 按�
 const GithubHeaderMock: React.FC = () => (
   <div aria-hidden className="rounded-lg border bg-muted/40 p-3">
     <div className="flex items-center gap-1.5 text-sm">
-      <span className="text-muted-foreground">baranwang /</span>
+      <span className="text-muted-foreground">caoool /</span>
       <span className="font-semibold">douban-bridge</span>
     </div>
     <div className="mt-3 flex items-center justify-end gap-1.5">

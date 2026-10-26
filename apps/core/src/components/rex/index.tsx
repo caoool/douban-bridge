@@ -18,9 +18,10 @@ import { ModeComparison } from "./mode-comparison";
 export interface RexProps {
   user?: PublicUser;
   imageProviders: ImageProvider[];
+  widgetUrl: string;
 }
 
-export function Rex({ user, imageProviders: initialImageProviders }: RexProps) {
+export function Rex({ user, imageProviders: initialImageProviders, widgetUrl }: RexProps) {
   const [imageProviders, setImageProviders] = useState(initialImageProviders);
   const [savedImageProviders, setSavedImageProviders] = useState(initialImageProviders);
   const [saving, setSaving] = useState(false);
@@ -55,7 +56,7 @@ export function Rex({ user, imageProviders: initialImageProviders }: RexProps) {
       actions={<UserMenu user={user} />}
     >
       <div className="mt-9 flex flex-col gap-10">
-        <InstallWidget />
+        <InstallWidget widgetUrl={widgetUrl} />
 
         {isStarred ? (
           <>

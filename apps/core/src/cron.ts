@@ -3,6 +3,7 @@ import { type DoubanIdMapping, doubanMapping } from "@/db";
 import { api } from "@/libs/api";
 import { AGENT_MATCH_CRON_BATCH } from "./libs/agent-match/constants";
 import { claimAgentJobs, recoverExpiredClaims } from "./libs/agent-match/pool";
+import { isAgentMatchEnabled } from "./libs/agent-match/settings";
 import { asyncLocalStorage } from "./libs/middleware";
 
 export const scheduled = async (_controller: ScheduledController, env: CloudflareBindings, ctx: ExecutionContext) => {
@@ -110,6 +111,7 @@ export const scheduled = async (_controller: ScheduledController, env: Cloudflar
         }
       }
       console.info("🎉 Successfully processed", successCount, "items");
+      if (!isAgentMatchEnabled(env) || !env.AGENT_MATCH_QUEUE) return;
       await recoverExpiredClaims();
       while (true) {
         const jobs = await claimAgentJobs(AGENT_MATCH_CRON_BATCH);

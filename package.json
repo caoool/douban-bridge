@@ -1,14 +1,14 @@
 {
-  "name": "stremio-addon-douban",
-  "displayName": "Douban",
+  "name": "caoool-douban-stremio-plugin",
+  "displayName": "Douban · caoool",
   "description": "Douban addon for Stremio",
   "type": "module",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "packageManager": "pnpm@12.4.2",
   "scripts": {
     "dev": "pnpm --filter @douban-bridge/core dev",
-    "build": "turbo build",
+    "build": "turbo build --filter=!@rexnow/douban",
     "preview": "pnpm --filter @douban-bridge/core preview",
     "deploy": "pnpm build && pnpm --filter @douban-bridge/core deploy",
     "cf-typegen": "turbo cf-typegen",

@@ -2,9 +2,9 @@ import type { BridgeItem, CatalogQuery } from "@douban-bridge/contracts";
 import { catalogResponseSchema } from "@douban-bridge/contracts";
 import type { DoubanSubjectCollectionItem } from "@douban-bridge/contracts/douban";
 import { fetchRecommendItems, fetchSearchItems, getBasicCatalog, toVideoItem as toBasicVideoItem } from "./basic";
+import { CORE_ORIGIN } from "./deployment";
 import { rexFetch } from "./http";
 
-const API_ORIGIN = "https://douban-bridge.baran.wang";
 const TMDB_ORIGINAL = "https://image.tmdb.org/t/p/original";
 
 function hostImagePath(url?: string | null) {
@@ -36,7 +36,7 @@ function cloudHeaders(sk: string, userId: string) {
 export async function loadCatalog(query: CatalogQuery, sk: string, userId = ""): Promise<VideoItem[]> {
   if (sk) {
     try {
-      const response = await rexFetch.get(`${API_ORIGIN}/v1/catalog/${encodeURIComponent(query.collectionId)}`, {
+      const response = await rexFetch.get(`${CORE_ORIGIN}/v1/catalog/${encodeURIComponent(query.collectionId)}`, {
         params: { skip: query.skip },
         headers: cloudHeaders(sk, userId),
         successStatus: [200],
@@ -56,7 +56,7 @@ async function enrichItems(sources: DoubanSubjectCollectionItem[], sk: string, u
   if (sk) {
     try {
       const response = await rexFetch.post(
-        `${API_ORIGIN}/v1/items`,
+        `${CORE_ORIGIN}/v1/items`,
         { ids: sources.map((item) => item.id) },
         {
           headers: cloudHeaders(sk, userId),

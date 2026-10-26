@@ -3,7 +3,7 @@ import test from "node:test";
 import { AGENT_MATCH_MAX_TURNS } from "../src/libs/agent-match/constants";
 import { agentMatchRuntime } from "../src/libs/agent-match/runner";
 import type { AgentTool } from "../src/libs/agent-match/tools";
-import { withTestContext } from "./context";
+import { withAgentMatchTestContext as withTestContext } from "./context";
 
 /** OpenAI Responses SSE for one assistant turn that calls `name` with `args`. */
 function toolCallStream(turn: number, name: string, args: Record<string, unknown>): Response {

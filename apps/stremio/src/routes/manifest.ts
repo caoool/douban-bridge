@@ -23,7 +23,7 @@ manifestRoute.get("/", async (c) => {
     version: ADDON.version,
     name: ADDON.name,
     description: ADDON.description,
-    logo: "https://stremio-addon-douban.baran.wang/icon.png",
+    logo: new URL("/icon.png", c.req.url).href,
     types: ["movie", "series"],
     resources,
     catalogs: data.catalogs,

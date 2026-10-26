@@ -11,7 +11,7 @@ import {
   recoverExpiredClaims,
 } from "../src/libs/agent-match/pool";
 import { api } from "../src/libs/api";
-import { withTestContext } from "./context";
+import { withAgentMatchTestContext as withTestContext } from "./context";
 
 test("claimAgentJobs only returns unevaluated missing-tmdb rows", async () => {
   await withTestContext(async () => {

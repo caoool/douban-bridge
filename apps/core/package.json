@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "node ../../scripts/prepare-rex-widget.mjs && vite build",
     "preview": "node scripts/preview.mjs",
     "db:migrate": "wrangler d1 migrations apply STREMIO_ADDON_DOUBAN --remote",
     "deploy": "wrangler d1 migrations apply STREMIO_ADDON_DOUBAN --remote && wrangler deploy",

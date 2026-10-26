@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/core";
 import { OAuthApp } from "@octokit/oauth-app";
 
-const GITHUB_REPO_OWNER = "baranwang";
+const GITHUB_REPO_OWNER = "caoool";
 const GITHUB_REPO_NAME = "douban-bridge";
 
 export interface GitHubUser {
@@ -58,11 +58,15 @@ export class GitHubAPI {
   }
 
   /**
-   * 检查用户是否 star 了指定仓库
+   * 仓库拥有者登录后直接可用；其他用户需 star 指定仓库。
    */
   async checkStarStatus(accessToken: string): Promise<boolean> {
     const octokit = new Octokit({ auth: accessToken });
     try {
+      // 只信任此 OAuth token 对应的 GitHub 身份，不接受客户端传入的用户名。
+      const { data: user } = await octokit.request("GET /user");
+      if (user.login.toLowerCase() === GITHUB_REPO_OWNER.toLowerCase()) return true;
+
       await octokit.request("GET /user/starred/{owner}/{repo}", {
         owner: GITHUB_REPO_OWNER,
         repo: GITHUB_REPO_NAME,

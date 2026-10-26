@@ -7,26 +7,20 @@
     "binding": "ASSETS",
     "run_worker_first": true
   },
-  "compatibility_date": "2025-11-28",
+  "compatibility_date": "2026-10-26",
   "compatibility_flags": ["nodejs_compat"],
   "placement": {
     "mode": "smart"
   },
   "workers_dev": true,
-  "routes": [
-    {
-      "pattern": "douban-bridge.baran.wang",
-      "custom_domain": true
-    }
-  ],
   "dev": {
     "port": 8787
   },
   "d1_databases": [
     {
       "binding": "STREMIO_ADDON_DOUBAN",
-      "database_name": "stremio-addon-douban",
-      "database_id": "543ed1d5-3da8-4ed1-8084-25084af52953",
+      "database_name": "douban-bridge",
+      "database_id": "1cfc8e1c-f772-4d2a-af98-4ac30e56a3ef",
       "migrations_dir": "drizzle",
       "remote": false
     }
@@ -34,18 +28,18 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "8274189206e84436bf11f861debd918a",
+      "id": "1c01f9ab2211436085db103f3257b426",
       "remote": false
     }
   ],
   "vars": {
     "DOUBAN_API_KEY": "0ac44ae016490db2204ce0a042db2916",
-    "TRAKT_CLIENT_ID": "95pidRr4d15bGI__HJQtIsSRzv_GfTnznlFotZrFsew",
-    "GITHUB_CLIENT_ID": "Ov23liAcIeCqxTwANWoZ",
-    "STREMIO_ORIGIN": "https://stremio-addon-douban.baran.wang",
-    "DASH_ORIGIN": "https://douban-bridge.baran.wang",
-    "AGENT_MATCH_GATEWAY_ID": "gateway",
-    "AGENT_MATCH_GATEWAY_PROVIDER": "carpool"
+    "STREMIO_ORIGIN": "https://douban-stremio-plugin.caoool.workers.dev",
+    "DASH_ORIGIN": "https://douban-bridge-core.caoool.workers.dev",
+    "AGENT_MATCH_GATEWAY_ID": "douban-bridge",
+    "AGENT_MATCH_GATEWAY_PROVIDER": "",
+    "AGENT_MATCH_ENABLED": "false",
+    "TOKENS_REPORT_ENABLED": "false"
   },
   "ratelimits": [
     {
@@ -80,13 +74,20 @@
     "binding": "AI"
   },
   "queues": {
-    "producers": [{ "binding": "AGENT_MATCH_QUEUE", "queue": "douban-agent-match" }],
-    "consumers": [{
-      "queue": "douban-agent-match",
-      "max_batch_size": 1,
-      "max_concurrency": 1,
-      "max_retries": 3
-    }]
+    "producers": [
+      {
+        "binding": "AGENT_MATCH_QUEUE",
+        "queue": "douban-agent-match"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "douban-agent-match",
+        "max_batch_size": 1,
+        "max_concurrency": 1,
+        "max_retries": 3
+      }
+    ]
   },
   "observability": {
     "logs": {
@@ -100,5 +101,9 @@
       "head_sampling_rate": 1,
       "persist": true
     }
+  },
+  "account_id": "4d1a9be94de7e6080ddebc5ad5b2df9b",
+  "secrets": {
+    "required": ["JWT_SECRET", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "TMDB_API_KEY", "TRAKT_CLIENT_ID"]
   }
 }

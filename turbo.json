@@ -5,6 +5,17 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "@douban-bridge/core#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/rex-widget/src/**",
+        "$TURBO_ROOT$/apps/rex-widget/package.json",
+        "$TURBO_ROOT$/apps/rex-widget/rslib.config.ts",
+        "$TURBO_ROOT$/scripts/prepare-rex-widget.mjs"
+      ],
+      "outputs": ["dist/**", "public/widget/**"]
+    },
     "test": {
       "cache": false
     },

@@ -40,6 +40,7 @@ rexRoute.get("/", async (c) => {
   const rexProps: RexProps = {
     user: user ? toPublicUser(user) : undefined,
     imageProviders: isStarred ? (await getConfig(c.env, user.id)).imageProviders : [],
+    widgetUrl: new URL("/widget/douban.js", c.env.DASH_ORIGIN).toString(),
   };
 
   return c.render(

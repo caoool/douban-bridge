@@ -14,6 +14,7 @@ import { CandidateRegistry } from "./candidates";
 import { AGENT_LEASE_MS, AGENT_MATCH_MAX_TURNS } from "./constants";
 import { matchImageContent } from "./images";
 import { AGENT_MATCH_SYSTEM_PROMPT } from "./prompt";
+import { isAgentMatchEnabled } from "./settings";
 import { addPiMessageUsage, type PiUsageBucket, reportPiUsage } from "./tokens-report";
 import { type AgentTool, createAgentMatchTools } from "./tools";
 import type { AgentMatchJob } from "./types";
@@ -315,6 +316,9 @@ export type AgentMatchSessionResult = { turnLimitReached: boolean };
 
 export const agentMatchRuntime = {
   async runPiSession(input: AgentMatchSessionInput): Promise<AgentMatchSessionResult> {
+    if (!isAgentMatchEnabled(getContext().env)) {
+      throw new Error("Agent matching is disabled; set AGENT_MATCH_ENABLED=true to enable it");
+    }
     const [
       { Agent },
       { Type, createModels, createProvider },
@@ -504,7 +508,10 @@ export const agentMatchRuntime = {
   },
 };
 
-export async function runAgentMatchJob(job: AgentMatchJob): Promise<"written" | "suggested" | "no_match" | "stale"> {
+export async function runAgentMatchJob(
+  job: AgentMatchJob,
+): Promise<"written" | "suggested" | "no_match" | "stale" | "disabled"> {
+  if (!isAgentMatchEnabled(getContext().env)) return "disabled";
   const row = await api.db.query.doubanMapping.findFirst({ where: eq(doubanMapping.doubanId, job.doubanId) });
   if (!row || row.deletedAt) {
     logAgentMatch(job.doubanId, "stale", { reason: "missing_row" });

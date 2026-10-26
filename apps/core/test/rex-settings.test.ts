@@ -6,8 +6,8 @@ import { app } from "../src/app";
 import { getDrizzle, userConfigs, users } from "../src/db";
 import { withTestContext } from "./context";
 
-const CORE = "https://douban-bridge.baran.wang";
-const STREMIO = "https://stremio-addon-douban.baran.wang";
+const CORE = "https://douban-bridge-core.caoool.workers.dev";
+const STREMIO = "https://douban-stremio-plugin.caoool.workers.dev";
 const GITHUB_TOKEN = "ghp_REX_SETTINGS_TEST";
 const PROVIDER_TOKEN = "REX_PROVIDER_TOKEN_DO_NOT_LEAK";
 
@@ -57,6 +57,8 @@ test("Rex page exposes settings only to a starred session", async () => {
     assert.equal(anonymousBody.includes('data-section="image-provider-settings"'), false);
     assert.ok(anonymousBody.includes("GitHub 登录"));
     assert.ok(anonymousBody.includes('data-section="install-widget"'));
+    assert.ok(anonymousBody.includes(`rex://widget/?url=${encodeURIComponent(`${CORE}/widget/douban.js`)}`));
+    assert.equal(anonymousBody.includes("unpkg.com/@rexnow/douban"), false);
 
     const unstarredId = await insertUser(env, { hasStarred: false });
     await getDrizzle(env)

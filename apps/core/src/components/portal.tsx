@@ -71,7 +71,7 @@ export function Portal({ user, stremioConfigureUrl }: PortalProps) {
           className="-ml-2.5 text-muted-foreground hover:text-foreground"
           render={
             <a
-              href="https://github.com/baranwang/douban-bridge"
+              href="https://github.com/caoool/douban-bridge"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="在 GitHub 上查看 Douban Bridge"

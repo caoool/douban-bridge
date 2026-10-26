@@ -1,6 +1,7 @@
 # prod
 dist/
 apps/*/dist/
+apps/core/public/widget/
 
 # dev
 .yarn/

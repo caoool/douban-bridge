@@ -1,7 +1,6 @@
--- Current sql file was generated after introspecting the database
--- If you want to run this migration please uncomment this code before executing migrations
-/*
-CREATE TABLE `douban_mapping` (
+-- Bootstrap the original schema on fresh databases. Existing installations keep
+-- their tables and data; later migrations still perform the incremental upgrades.
+CREATE TABLE IF NOT EXISTS `douban_mapping` (
 	`douban_id` integer PRIMARY KEY NOT NULL,
 	`tmdb_id` integer,
 	`imdb_id` text,
@@ -11,7 +10,7 @@ CREATE TABLE `douban_mapping` (
 	`updated_at` integer
 );
 --> statement-breakpoint
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` text PRIMARY KEY,
 	`github_id` integer NOT NULL,
 	`github_login` text NOT NULL,
@@ -23,7 +22,7 @@ CREATE TABLE `users` (
 	`updated_at` integer
 );
 --> statement-breakpoint
-CREATE TABLE `user_configs` (
+CREATE TABLE IF NOT EXISTS `user_configs` (
 	`user_id` text PRIMARY KEY,
 	`catalog_ids` text DEFAULT '[]',
 	`image_proxy` text DEFAULT 'none',
@@ -35,5 +34,3 @@ CREATE TABLE `user_configs` (
 	`image_providers` text DEFAULT '[{"provider":"douban","extra":{"proxy":"none"}}]',
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
-
-*/

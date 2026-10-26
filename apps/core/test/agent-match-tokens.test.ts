@@ -75,7 +75,8 @@ test("pi submission totals stay consistent and stay on the pi client", () => {
 });
 
 test("reported usage accumulates and submits the full pi snapshot", async () => {
-  await withTestContext(async () => {
+  await withTestContext(async (env) => {
+    Object.assign(env, { TOKENS_REPORT_ENABLED: true });
     const bodies: Array<{ contributions: Array<{ date: string; totals: { tokens: number } }> }> = [];
     const fetchImpl: typeof fetch = async (_url, init) => {
       bodies.push(JSON.parse(String(init?.body)));

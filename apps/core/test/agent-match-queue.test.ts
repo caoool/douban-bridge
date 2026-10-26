@@ -8,7 +8,7 @@ import { handleAgentMatchBatch } from "../src/libs/agent-match/queue";
 import * as runner from "../src/libs/agent-match/runner";
 import { api } from "../src/libs/api";
 import { TmdbAPI } from "../src/libs/api/tmdb";
-import { withTestContext } from "./context";
+import { withAgentMatchTestContext as withTestContext } from "./context";
 
 test("customCostHeaderFromOpenRouterPricing maps OpenRouter prices", () => {
   const cost = JSON.parse(
